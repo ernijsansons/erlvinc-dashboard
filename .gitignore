@@ -50,3 +50,5 @@ Thumbs.db
 .mcp.json
 mcp-config.json
 **/mcp-config.json
+
+.vercel
