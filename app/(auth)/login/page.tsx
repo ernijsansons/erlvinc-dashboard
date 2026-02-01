@@ -14,9 +14,41 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Initialize Supabase client only in browser
-    setSupabase(createClient())
-  }, [])
+    const initializeAuth = async () => {
+      // Initialize Supabase client only in browser
+      const supabaseClient = createClient()
+      setSupabase(supabaseClient)
+
+      // Check if redirected from erlvinc.com with session tokens
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search)
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token')
+
+        if (accessToken && refreshToken) {
+          try {
+            // Restore the session with tokens from erlvinc.com
+            await supabaseClient.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+
+            // Clear tokens from URL for security
+            window.history.replaceState({}, document.title, window.location.pathname)
+
+            // Redirect to dashboard
+            router.push('/dashboard')
+            router.refresh()
+          } catch (err) {
+            console.error('Failed to restore session:', err)
+            // Session restoration failed, user will need to login manually
+          }
+        }
+      }
+    }
+
+    initializeAuth()
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
