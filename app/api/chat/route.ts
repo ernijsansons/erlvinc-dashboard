@@ -101,7 +101,7 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5',
+          model: process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2-5',
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages,
