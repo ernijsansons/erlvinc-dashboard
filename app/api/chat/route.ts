@@ -94,8 +94,8 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
 
     // Always construct full path (baseURL should already include /v1)
     const endpoint = `${baseURL}/chat/completions`
-    // Try with a known working model first: meta/llama-3.3-70b-instruct
-    const model = process.env.PRIMARY_MODEL || 'meta/llama-3.3-70b-instruct'
+    // Kimi K2.5 for thinking mode
+    const model = process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5'
 
     console.log('[Chat API] Final endpoint:', endpoint)
     console.log('[Chat API] Final model:', model)
@@ -116,7 +116,7 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
           ],
           temperature: 1.0,
           top_p: 0.95,
-          max_tokens: 2048,
+          max_tokens: 8192,  // Increased for Kimi K2.5 thinking mode
           stream: true,
         }),
       }
