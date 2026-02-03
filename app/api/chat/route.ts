@@ -94,10 +94,12 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
 
     // Always construct full path (baseURL should already include /v1)
     const endpoint = `${baseURL}/chat/completions`
-    const model = process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5'
+    // Try with a known working model first: meta/llama-3.3-70b-instruct
+    const model = process.env.PRIMARY_MODEL || 'meta/llama-3.3-70b-instruct'
 
     console.log('[Chat API] Final endpoint:', endpoint)
     console.log('[Chat API] Final model:', model)
+    console.log('[Chat API] Base URL value:', baseURL)
 
     // Direct fetch to NVIDIA API - bypassing AI SDK
     const nvidiaResponse = await fetch(endpoint, {
