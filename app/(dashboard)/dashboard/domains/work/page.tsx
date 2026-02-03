@@ -11,13 +11,12 @@ export default async function WorkPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  const projectIds = projects?.map(p => p.id) ?? []
+
   const { data: tasks } = await supabase
     .from('tasks')
     .select('*')
-    .in(
-      'project_id',
-      projects?.map(p => p.id) || []
-    )
+    .in('project_id', projectIds.length > 0 ? projectIds : [''])
     .order('created_at', { ascending: false })
 
   return (
