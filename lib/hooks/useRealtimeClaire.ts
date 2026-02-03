@@ -47,12 +47,13 @@ export function useRealtimeClaire() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'claire_signals' },
         (payload) => {
+          const newRecord = payload.new as any
           setData(prev => ({
             ...prev,
             signals: payload.eventType === 'INSERT'
-              ? [payload.new, ...prev.signals]
+              ? [newRecord, ...prev.signals]
               : prev.signals.map(s =>
-                  s.id === payload.new.id ? payload.new : s
+                  s.id === newRecord.id ? newRecord : s
                 ),
           }))
         }
@@ -66,12 +67,13 @@ export function useRealtimeClaire() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'claire_trades' },
         (payload) => {
+          const newTrade = payload.new as any
           setData(prev => ({
             ...prev,
             trades: payload.eventType === 'INSERT'
-              ? [payload.new, ...prev.trades]
+              ? [newTrade, ...prev.trades]
               : prev.trades.map(t =>
-                  t.id === payload.new.id ? payload.new : t
+                  t.id === newTrade.id ? newTrade : t
                 ),
           }))
         }

@@ -96,11 +96,10 @@ export function DiscussionChat({ opportunityId }: DiscussionChatProps) {
         discussion_started_at: messages.length === 0 ? new Date().toISOString() : undefined,
         updated_at: new Date().toISOString(),
       }
-      // @ts-ignore - Supabase type system issue
-      await supabase
+      const query = supabase
         .from('labs_opportunities')
-        .update(updateData)
-        .eq('id', opportunityId)
+      // @ts-ignore - Supabase type system issue
+      await query.update(updateData).eq('id', opportunityId)
     } catch (error) {
       console.error('Error sending message:', error)
       alert('Failed to send message. Please try again.')

@@ -14,6 +14,9 @@ export default async function ProjectsPage() {
     .from('tasks')
     .select('*')
 
+  const projectList = (projects || []) as any[]
+  const taskList = (tasks || []) as any[]
+
   return (
     <div className="space-y-6">
       <div>
@@ -22,9 +25,9 @@ export default async function ProjectsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {projects && projects.length > 0 ? (
-          projects.map(project => {
-            const projectTasks = tasks?.filter(t => t.project_id === project.id) || []
+        {projectList && projectList.length > 0 ? (
+          projectList.map(project => {
+            const projectTasks = taskList.filter(t => t.project_id === project.id) || []
             const statuses = ['backlog', 'todo', 'in_progress', 'review', 'done'] as const
 
             return (

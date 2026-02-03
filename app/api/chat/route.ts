@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet: any[]) {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             )
@@ -86,6 +86,7 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
     try {
       console.log('Using NVIDIA API with model:', process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5')
       const result = await streamText({
+        // @ts-ignore - Model version compatibility issue
         model: primaryModel,
         system: systemPrompt,
         messages: convertToCoreMessages(messages),
@@ -100,6 +101,7 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
       console.error('Kimi 2.5 failed, falling back to DeepSeek:', error)
 
       const result = await streamText({
+        // @ts-ignore - Model version compatibility issue
         model: backupModel,
         system: systemPrompt,
         messages: convertToCoreMessages(messages),
