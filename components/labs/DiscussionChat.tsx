@@ -39,8 +39,9 @@ export function DiscussionChat({ opportunityId }: DiscussionChatProps) {
       .eq('id', opportunityId)
       .single()
 
-    if (opportunity?.discussion_messages) {
-      setMessages(opportunity.discussion_messages as Message[])
+    const opp = opportunity as any
+    if (opp?.discussion_messages) {
+      setMessages(opp.discussion_messages as Message[])
     }
   }
 
