@@ -11,7 +11,7 @@ export default async function WorkPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  const projectIds = projects?.map(p => p.id) ?? []
+  const projectIds = (projects || []).map((p: any) => p.id)
 
   const { data: tasks } = await supabase
     .from('tasks')

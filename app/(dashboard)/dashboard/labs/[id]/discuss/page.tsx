@@ -22,19 +22,21 @@ export default async function LabsDiscussionPage({
     notFound()
   }
 
+  const opp = opportunity as any // Type assertion to fix TypeScript narrowing issue
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">{opportunity.title}</h1>
-          <p className="text-[#64748b] mt-2">Strategic discussion with Claude</p>
+          <h1 className="text-2xl font-bold text-white">{opp.title}</h1>
+          <p className="text-[#64748b] mt-2">Strategic discussion with AI advisor</p>
         </div>
-        {opportunity.betty_recommendation && (
+        {opp.betty_recommendation && (
           <Badge
-            variant={opportunity.betty_recommendation === 'GO' ? 'default' : 'destructive'}
+            variant={opp.betty_recommendation === 'GO' ? 'default' : 'secondary'}
             className="text-sm"
           >
-            Betty: {opportunity.betty_recommendation}
+            Betty: {opp.betty_recommendation}
           </Badge>
         )}
       </div>
@@ -45,35 +47,35 @@ export default async function LabsDiscussionPage({
           <CardTitle className="text-white">Opportunity Summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {opportunity.niche && (
+          {opp.niche && (
             <div>
               <p className="text-[#64748b] text-sm">Target Niche</p>
-              <p className="text-white">{opportunity.niche}</p>
+              <p className="text-white">{opp.niche}</p>
             </div>
           )}
-          {opportunity.capability_unlock && (
+          {opp.capability_unlock && (
             <div>
               <p className="text-[#64748b] text-sm">Capability Unlock</p>
-              <p className="text-white">{opportunity.capability_unlock}</p>
+              <p className="text-white">{opp.capability_unlock}</p>
             </div>
           )}
-          {opportunity.initial_value_prop && (
+          {opp.initial_value_prop && (
             <div>
               <p className="text-[#64748b] text-sm">Value Proposition</p>
-              <p className="text-white">{opportunity.initial_value_prop}</p>
+              <p className="text-white">{opp.initial_value_prop}</p>
             </div>
           )}
-          {opportunity.betty_reasoning && (
+          {opp.betty_reasoning && (
             <div>
               <p className="text-[#64748b] text-sm">Betty's Analysis</p>
-              <p className="text-white">{opportunity.betty_reasoning}</p>
+              <p className="text-white">{opp.betty_reasoning}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Chat Interface */}
-      <DiscussionChat opportunityId={params.id} />
+      <DiscussionChat opportunityId={id} />
     </div>
   )
 }

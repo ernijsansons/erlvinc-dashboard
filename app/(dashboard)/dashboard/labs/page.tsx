@@ -64,12 +64,14 @@ export default function LabsPage() {
     )
 
     // Update in database
+    const updateData: Record<string, any> = {
+      status: toColumn,
+      updated_at: new Date().toISOString()
+    }
     const { error } = await supabase
       .from('labs_opportunities')
-      .update({
-        status: toColumn,
-        updated_at: new Date().toISOString()
-      })
+      // @ts-ignore - Supabase type system issue
+      .update(updateData)
       .eq('id', itemId)
 
     if (error) {
