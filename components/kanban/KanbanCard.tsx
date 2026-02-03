@@ -9,7 +9,7 @@ export interface KanbanCardProps {
   id: string
   title: string
   subtitle?: string
-  badges?: Array<{ label: string; variant?: 'default' | 'secondary' | 'destructive' }>
+  badges?: Array<{ label: string; variant?: 'default' | 'secondary' | 'outline' }>
   metadata?: Array<{ label: string; value: string }>
   onClick?: () => void
 }
