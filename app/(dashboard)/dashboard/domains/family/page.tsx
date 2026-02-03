@@ -1,19 +1,22 @@
-import { Card, CardContent } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/server'
+import { DomainView } from '@/components/domains/DomainView'
 
-export default function FamilyDomainPage() {
+export default async function FamilyPage() {
+  const supabase = await createClient()
+
+  // For now, return empty arrays
+  // In the future, filter by domain field in projects table
+  const projects: any[] = []
+  const tasks: any[] = []
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-white tracking-wide">Family Domain</h1>
-        <p className="text-[#64748b] mt-2">Family-related initiatives and projects</p>
-      </div>
-
-      <Card className="bg-[#111827] border-[#1e293b]">
-        <CardContent className="p-8 text-center">
-          <p className="text-[#64748b]">Family-focused projects and tasks</p>
-          <p className="text-[#64748b] text-sm mt-2">Filtered view - Domain filtering to be implemented in Task 014</p>
-        </CardContent>
-      </Card>
-    </div>
+    <DomainView
+      domain="family"
+      emoji="❤️"
+      title="Family & Relationships"
+      description="Time with family, relationship goals, and personal connections"
+      projects={projects}
+      tasks={tasks}
+    />
   )
 }

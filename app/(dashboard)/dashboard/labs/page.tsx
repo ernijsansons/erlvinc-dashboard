@@ -1,86 +1,148 @@
-import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+'use client'
 
-export default async function LabsPage() {
-  const supabase = await createClient()
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { KanbanBoard, KanbanColumnConfig, KanbanItem } from '@/components/kanban'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
-  const { data: opportunities } = await supabase
-    .from('labs_opportunities')
-    .select('*')
-    .order('created_at', { ascending: false })
+const LABS_COLUMNS: KanbanColumnConfig[] = [
+  { id: 'scanned', title: 'Scanned', icon: '🔍' },
+  { id: 'researching', title: 'Researching', icon: '🔬' },
+  { id: 'review', title: 'Review', icon: '👀' },
+  { id: 'discussion', title: 'Discussion', icon: '💬' },
+  { id: 'approved', title: 'Approved', icon: '✅' },
+]
 
-  const stages = ['scanned', 'researching', 'review', 'discussion', 'approved']
+export default function LabsPage() {
+  const [opportunities, setOpportunities] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    fetchOpportunities()
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('labs-opportunities')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'labs_opportunities',
+        },
+        () => {
+          fetchOpportunities()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  const fetchOpportunities = async () => {
+    const { data } = await supabase
+      .from('labs_opportunities')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    setOpportunities(data || [])
+    setIsLoading(false)
+  }
+
+  const handleItemMove = async (itemId: string, fromColumn: string, toColumn: string) => {
+    // Optimistic update
+    setOpportunities(prev =>
+      prev.map(opp =>
+        opp.id === itemId ? { ...opp, status: toColumn } : opp
+      )
+    )
+
+    // Update in database
+    const { error } = await supabase
+      .from('labs_opportunities')
+      .update({
+        status: toColumn,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', itemId)
+
+    if (error) {
+      console.error('Error updating opportunity:', error)
+      // Revert on error
+      fetchOpportunities()
+    }
+  }
+
+  const handleItemClick = (item: KanbanItem) => {
+    router.push(`/dashboard/labs/${item.id}/discuss`)
+  }
+
+  // Transform opportunities to Kanban items
+  const kanbanItems: KanbanItem[] = opportunities.map(opp => ({
+    id: opp.id,
+    columnId: opp.status || 'scanned',
+    title: opp.title,
+    subtitle: opp.niche,
+    badges: opp.betty_recommendation
+      ? [{
+          label: `Betty: ${opp.betty_recommendation}`,
+          variant: opp.betty_recommendation === 'GO' ? 'default' : 'destructive' as const
+        }]
+      : undefined,
+    metadata: opp.betty_confidence
+      ? [{ label: 'Confidence', value: `${opp.betty_confidence}/10` }]
+      : undefined
+  }))
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-white tracking-wide">LABS</h1>
-        <p className="text-[#64748b] mt-2">5-stage opportunity pipeline</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-wide">🔬 LABS</h1>
+          <p className="text-[#64748b] mt-2">5-stage opportunity pipeline</p>
+        </div>
+        <Button
+          className="bg-[#22d3ee] text-black hover:bg-[#22d3ee]/80"
+          onClick={() => {
+            // TODO: Implement scan new opportunity
+            alert('Scan new opportunity feature coming soon!')
+          }}
+        >
+          + Scan New Opportunity
+        </Button>
       </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-5 gap-4 h-[600px]">
-        {stages.map((stage) => {
-          const stageOps = (opportunities || []).filter(
-            (op: any) => op.status === stage
-          )
+      <KanbanBoard
+        columns={LABS_COLUMNS}
+        items={kanbanItems}
+        onItemMove={handleItemMove}
+        onItemClick={handleItemClick}
+        isLoading={isLoading}
+      />
 
-          return (
-            <div key={stage} className="flex flex-col space-y-2">
-              <div className="flex items-center justify-between px-4 py-2 bg-[#111827] rounded-lg border border-[#1e293b]">
-                <h3 className="text-white font-semibold capitalize">{stage}</h3>
-                <span className="text-[#64748b] text-sm">{stageOps.length}</span>
-              </div>
-              <div className="flex-1 space-y-2 overflow-y-auto">
-                {stageOps.length === 0 ? (
-                  <div className="p-4 bg-[#111827]/50 border-2 border-dashed border-[#1e293b] rounded-lg">
-                    <p className="text-[#64748b] text-xs text-center">No opportunities</p>
-                  </div>
-                ) : (
-                  stageOps.map((op: any) => (
-                    <Card
-                      key={op.id}
-                      className="bg-[#111827] border-[#1e293b] cursor-pointer hover:border-[#22d3ee]/50"
-                    >
-                      <CardContent className="p-4 space-y-2">
-                        <h4 className="text-white text-sm font-semibold">{op.title}</h4>
-                        {op.niche && (
-                          <p className="text-[#64748b] text-xs">{op.niche}</p>
-                        )}
-                        {op.betty_recommendation && (
-                          <div className="pt-2 border-t border-[#1e293b]">
-                            <p className="text-xs">
-                              <span className="text-[#64748b]">Betty:</span>{' '}
-                              <span
-                                className={
-                                  op.betty_recommendation === 'GO'
-                                    ? 'text-green-400'
-                                    : 'text-red-400'
-                                }
-                              >
-                                {op.betty_recommendation}
-                              </span>
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Add New Opportunity Button */}
-      <Card className="bg-[#111827] border-[#1e293b]">
-        <CardContent className="p-6 text-center">
-          <button className="px-6 py-2 bg-[#22d3ee] text-black font-semibold rounded-lg hover:bg-[#22d3ee]/80">
-            + Scan New Opportunity
-          </button>
-        </CardContent>
-      </Card>
+      {!isLoading && opportunities.length === 0 && (
+        <Card className="bg-[#111827] border-[#1e293b]">
+          <CardContent className="p-8 text-center">
+            <p className="text-[#64748b] mb-4">
+              No opportunities in the pipeline yet. Scan your first opportunity to get started.
+            </p>
+            <Button
+              className="bg-[#22d3ee] text-black hover:bg-[#22d3ee]/80"
+              onClick={() => {
+                alert('Scan new opportunity feature coming soon!')
+              }}
+            >
+              Scan First Opportunity
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

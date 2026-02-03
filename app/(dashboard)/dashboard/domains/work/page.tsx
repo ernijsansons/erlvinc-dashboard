@@ -1,19 +1,33 @@
-import { Card, CardContent } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/server'
+import { DomainView } from '@/components/domains/DomainView'
 
-export default function WorkDomainPage() {
+export default async function WorkPage() {
+  const supabase = await createClient()
+
+  // Fetch all projects and tasks for now
+  // In the future, can filter by domain when added to schema
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .in(
+      'project_id',
+      projects?.map(p => p.id) || []
+    )
+    .order('created_at', { ascending: false })
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-white tracking-wide">Work Domain</h1>
-        <p className="text-[#64748b] mt-2">Business and development projects</p>
-      </div>
-
-      <Card className="bg-[#111827] border-[#1e293b]">
-        <CardContent className="p-8 text-center">
-          <p className="text-[#64748b]">Work-related projects, tasks, and initiatives</p>
-          <p className="text-[#64748b] text-sm mt-2">Filtered view - Domain filtering to be implemented in Task 014</p>
-        </CardContent>
-      </Card>
-    </div>
+    <DomainView
+      domain="work"
+      emoji="💼"
+      title="Work Projects"
+      description="Software development, business operations, and professional tasks"
+      projects={projects || []}
+      tasks={tasks || []}
+    />
   )
 }
