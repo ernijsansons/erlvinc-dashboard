@@ -1,8 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { streamText } from 'ai'
 
 export const runtime = 'edge'
 export const maxDuration = 60
@@ -80,58 +78,98 @@ ${opportunities?.map(o => `- ${o.title} (${o.status}) - Betty: ${o.betty_recomme
 
 Answer user questions about ERLV Inc operations, provide strategic advice, and help make decisions.`
 
-    // Initialize NVIDIA provider with OpenAI-compatible SDK
-    const nvidia = createOpenAICompatible({
-      name: 'nvidia',
-      baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-      headers: {
-        'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
-      },
-    })
+    console.log('[Chat API] Making direct NVIDIA API call')
 
-    // Primary model: Kimi 2.5 with advanced thinking mode
-    const primaryModel = nvidia(process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5')
+    // Direct fetch to NVIDIA API - bypassing AI SDK
+    const nvidiaResponse = await fetch(
+      `${process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'}/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+          ],
+          temperature: 1.0,
+          top_p: 0.95,
+          max_tokens: 2048,
+          stream: true,
+        }),
+      }
+    )
 
-    console.log('[Chat API] Starting stream with model:', process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5')
+    console.log('[Chat API] NVIDIA response status:', nvidiaResponse.status)
 
-    // Use AI SDK v6 streamText with full configuration
-    const result = streamText({
-      model: primaryModel,
-      system: systemPrompt,
-      messages: messages,
-      temperature: 1.0,
-      topP: 0.95,
-      onFinish: (result) => {
-        console.log('[Chat API] Stream finished:', {
-          usage: result.usage,
-          finishReason: result.finishReason,
-        })
-      },
-    })
+    if (!nvidiaResponse.ok) {
+      const errorText = await nvidiaResponse.text()
+      console.error('[Chat API] NVIDIA error:', errorText)
+      throw new Error(`NVIDIA API error: ${nvidiaResponse.status} - ${errorText}`)
+    }
 
-    console.log('[Chat API] streamText() called, creating response stream')
+    console.log('[Chat API] Creating streaming response')
 
-    // Return streaming response with logging
+    // Return the raw stream from NVIDIA
     const encoder = new TextEncoder()
+    const decoder = new TextDecoder()
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log('[Chat API] Stream started, beginning to read textStream')
-          let chunkCount = 0
-
-          for await (const chunk of result.textStream) {
-            chunkCount++
-            console.log('[Chat API] Chunk', chunkCount, ':', chunk.substring(0, 50))
-            controller.enqueue(encoder.encode(chunk))
+          console.log('[Chat API] Starting to process NVIDIA stream')
+          const reader = nvidiaResponse.body?.getReader()
+          if (!reader) {
+            throw new Error('No response body from NVIDIA')
           }
 
-          console.log('[Chat API] Stream complete, total chunks:', chunkCount)
+          let chunkCount = 0
+          let done = false
+
+          while (!done) {
+            const { value, done: readerDone } = await reader.read()
+            done = readerDone
+
+            if (value) {
+              chunkCount++
+              const chunkText = decoder.decode(value, { stream: true })
+              console.log('[Chat API] Chunk', chunkCount, 'length:', chunkText.length)
+
+              // Parse SSE format (data: {...})
+              const lines = chunkText.split('\n').filter(line => line.trim())
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const jsonStr = line.substring(6)
+                  if (jsonStr === '[DONE]') {
+                    console.log('[Chat API] Received [DONE] signal')
+                    continue
+                  }
+
+                  try {
+                    const data = JSON.parse(jsonStr)
+                    const content = data.choices?.[0]?.delta?.content
+                    if (content) {
+                      console.log('[Chat API] Sending content:', content.substring(0, 50))
+                      controller.enqueue(encoder.encode(content))
+                    }
+                  } catch (e) {
+                    console.error('[Chat API] Failed to parse SSE chunk:', e)
+                  }
+                }
+              }
+            }
+          }
+
+          console.log('[Chat API] Stream complete. Total chunks:', chunkCount)
           controller.close()
         } catch (error) {
           console.error('[Chat API] Stream error:', error)
           controller.error(error)
         }
-      }
+      },
     })
 
     return new Response(stream, {
