@@ -7,14 +7,15 @@ import { Badge } from '@/components/ui/badge'
 export default async function LabsDiscussionPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const supabase = await createClient()
 
   const { data: opportunity } = await supabase
     .from('labs_opportunities')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!opportunity) {

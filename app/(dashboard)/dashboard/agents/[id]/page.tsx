@@ -51,8 +51,9 @@ const agentDetails = {
   },
 }
 
-export default function AgentDetailPage({ params }: { params: { id: string } }) {
-  const agent = agentDetails[params.id as keyof typeof agentDetails]
+export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const agent = agentDetails[id as keyof typeof agentDetails]
 
   if (!agent) {
     notFound()
