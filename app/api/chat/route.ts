@@ -113,7 +113,9 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
     if (!nvidiaResponse.ok) {
       const errorText = await nvidiaResponse.text()
       console.error('[Chat API] NVIDIA error:', errorText)
-      throw new Error(`NVIDIA API error: ${nvidiaResponse.status} - ${errorText}`)
+      console.error('[Chat API] Failed endpoint was:', endpoint)
+      console.error('[Chat API] Base URL env var:', process.env.NVIDIA_BASE_URL)
+      throw new Error(`NVIDIA API error: ${nvidiaResponse.status} - ${errorText} | Endpoint: ${endpoint}`)
     }
 
     console.log('[Chat API] Creating streaming response')
