@@ -38,10 +38,17 @@ export async function POST(request: NextRequest) {
       .eq('status', 'in_progress')
       .limit(10)
 
-    const { data: opportunities } = await supabase
-      .from('labs_opportunities')
-      .select('id, title, status, betty_recommendation')
-      .limit(5)
+    // LABS opportunities (optional - table may not exist yet)
+    let opportunities = null
+    try {
+      const { data } = await supabase
+        .from('labs_opportunities')
+        .select('id, title, status, betty_recommendation')
+        .limit(5)
+      opportunities = data
+    } catch (error) {
+      console.log('LABS table not yet created, skipping opportunities context')
+    }
 
     const systemPrompt = `You are Claude, the strategic advisor and COO of ERLV Inc. You help manage:
 
