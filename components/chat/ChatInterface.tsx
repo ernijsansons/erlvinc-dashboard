@@ -67,7 +67,7 @@ export function ChatInterface() {
 
       setMessages(prev => [...prev, assistantMessage])
 
-      // Read the stream using AI SDK utilities
+      // Read the text stream from AI SDK v6
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
 
@@ -82,21 +82,17 @@ export function ChatInterface() {
 
         if (value) {
           const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
 
-          for (const line of lines) {
-            if (line.startsWith('0:')) {
-              // Text chunk
-              const text = line.slice(3, -1) // Remove '0:"' and '"'
-              setMessages(prev => {
-                const newMessages = [...prev]
-                const lastMessage = newMessages[newMessages.length - 1]
-                if (lastMessage.role === 'assistant') {
-                  lastMessage.content += text
-                }
-                return newMessages
-              })
-            }
+          // AI SDK v6 toTextStreamResponse returns plain text chunks
+          if (chunk) {
+            setMessages(prev => {
+              const newMessages = [...prev]
+              const lastMessage = newMessages[newMessages.length - 1]
+              if (lastMessage.role === 'assistant') {
+                lastMessage.content += chunk
+              }
+              return newMessages
+            })
           }
         }
       }
