@@ -80,10 +80,15 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
 
     console.log('[Chat API] Making direct NVIDIA API call')
 
+    const baseURL = process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'
+    const endpoint = baseURL.endsWith('/v1')
+      ? `${baseURL}/chat/completions`
+      : `${baseURL}/v1/chat/completions`
+
+    console.log('[Chat API] Endpoint:', endpoint)
+
     // Direct fetch to NVIDIA API - bypassing AI SDK
-    const nvidiaResponse = await fetch(
-      `${process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'}/chat/completions`,
-      {
+    const nvidiaResponse = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`,
