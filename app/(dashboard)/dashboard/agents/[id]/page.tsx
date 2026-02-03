@@ -80,7 +80,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
         </Card>
 
         {/* Janis Stats */}
-        {params.id === 'janis' && (
+        {id === 'janis' && (
           <>
             <StatBox title="Current Tasks" value={agent.currentTasks} />
             <StatBox title="Completed Today" value={agent.completedToday} />
@@ -90,7 +90,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
         )}
 
         {/* Betty Stats */}
-        {params.id === 'betty' && (
+        {id === 'betty' && (
           <>
             <StatBox title="Current Tasks" value={agent.currentTasks} />
             <StatBox title="Completed Today" value={agent.completedToday} />
@@ -100,7 +100,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
         )}
 
         {/* Claire Stats */}
-        {params.id === 'claire' && (
+        {id === 'claire' && (
           <>
             <StatBox title="Trades Today" value={agent.tradesToday} />
             <StatBox title="Win Rate" value={agent.winRate} />
@@ -108,7 +108,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
         )}
 
         {/* Jon Stats */}
-        {params.id === 'jon' && (
+        {id === 'jon' && (
           <>
             <StatBox title="Execution Rate" value={agent.executionRate} />
             <StatBox title="Avg Time" value={agent.avgTime} />
