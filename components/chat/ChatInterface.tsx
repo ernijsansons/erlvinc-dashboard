@@ -76,12 +76,26 @@ export function ChatInterface() {
       }
 
       let done = false
+      let chunkCount = 0
+      console.log('[Chat UI] Starting to read stream...')
+
       while (!done) {
         const { value, done: readerDone } = await reader.read()
         done = readerDone
 
+        console.log('[Chat UI] Stream chunk received:', {
+          chunkNumber: ++chunkCount,
+          hasValue: !!value,
+          done: readerDone,
+          valueLength: value?.length
+        })
+
         if (value) {
           const chunk = decoder.decode(value, { stream: true })
+          console.log('[Chat UI] Decoded chunk:', {
+            text: chunk.substring(0, 100), // First 100 chars
+            length: chunk.length
+          })
 
           // AI SDK v6 toTextStreamResponse returns plain text chunks
           if (chunk) {
@@ -89,13 +103,20 @@ export function ChatInterface() {
               const newMessages = [...prev]
               const lastMessage = newMessages[newMessages.length - 1]
               if (lastMessage.role === 'assistant') {
+                console.log('[Chat UI] Appending to assistant message:', {
+                  currentLength: lastMessage.content.length,
+                  appendingLength: chunk.length
+                })
                 lastMessage.content += chunk
+              } else {
+                console.warn('[Chat UI] Last message is not assistant:', lastMessage.role)
               }
               return newMessages
             })
           }
         }
       }
+      console.log('[Chat UI] Stream reading complete. Total chunks:', chunkCount)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Request was aborted, do nothing
