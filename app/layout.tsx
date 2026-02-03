@@ -4,6 +4,11 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'ERLV Inc Dashboard',
   description: 'AI-powered operating system dashboard',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
