@@ -109,8 +109,38 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
       },
     })
 
-    // Return streaming response
-    return result.toTextStreamResponse()
+    console.log('[Chat API] streamText() called, creating response stream')
+
+    // Return streaming response with logging
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          console.log('[Chat API] Stream started, beginning to read textStream')
+          let chunkCount = 0
+
+          for await (const chunk of result.textStream) {
+            chunkCount++
+            console.log('[Chat API] Chunk', chunkCount, ':', chunk.substring(0, 50))
+            controller.enqueue(encoder.encode(chunk))
+          }
+
+          console.log('[Chat API] Stream complete, total chunks:', chunkCount)
+          controller.close()
+        } catch (error) {
+          console.error('[Chat API] Stream error:', error)
+          controller.error(error)
+        }
+      }
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   } catch (error) {
     console.error('[Chat API] Error:', error)
 
