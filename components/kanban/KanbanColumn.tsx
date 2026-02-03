@@ -4,15 +4,16 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { KanbanCard, KanbanCardProps } from './KanbanCard'
+import { KanbanCard } from './KanbanCard'
+import { KanbanItem } from './KanbanBoard'
 
 interface KanbanColumnProps {
   id: string
   title: string
   icon?: string
   count: number
-  items: KanbanCardProps[]
-  onItemClick?: (item: KanbanCardProps) => void
+  items: KanbanItem[]
+  onItemClick?: (item: KanbanItem) => void
 }
 
 export function KanbanColumn({
