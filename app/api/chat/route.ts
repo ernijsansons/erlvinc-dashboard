@@ -80,10 +80,16 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
 
     console.log('[Chat API] Making direct NVIDIA API call')
 
-    const baseURL = process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'
-    const endpoint = baseURL.endsWith('/v1')
-      ? `${baseURL}/chat/completions`
-      : `${baseURL}/v1/chat/completions`
+    // Clean and construct endpoint URL
+    let baseURL = (process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').trim()
+
+    // Remove trailing slash if present
+    if (baseURL.endsWith('/')) {
+      baseURL = baseURL.slice(0, -1)
+    }
+
+    // Always construct full path (baseURL should already include /v1)
+    const endpoint = `${baseURL}/chat/completions`
 
     console.log('[Chat API] Endpoint:', endpoint)
 
