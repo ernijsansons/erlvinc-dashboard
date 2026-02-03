@@ -79,6 +79,10 @@ ${opportunities?.map(o => `- ${o.title} (${o.status}) - Betty: ${o.betty_recomme
 Answer user questions about ERLV Inc operations, provide strategic advice, and help make decisions.`
 
     console.log('[Chat API] Making direct NVIDIA API call')
+    console.log('[Chat API] Raw NVIDIA_BASE_URL env:', JSON.stringify(process.env.NVIDIA_BASE_URL))
+    console.log('[Chat API] Raw PRIMARY_MODEL env:', JSON.stringify(process.env.PRIMARY_MODEL))
+    console.log('[Chat API] NVIDIA_API_KEY present:', !!process.env.NVIDIA_API_KEY)
+    console.log('[Chat API] NVIDIA_API_KEY length:', process.env.NVIDIA_API_KEY?.length)
 
     // Clean and construct endpoint URL
     let baseURL = (process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').trim()
@@ -90,8 +94,10 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
 
     // Always construct full path (baseURL should already include /v1)
     const endpoint = `${baseURL}/chat/completions`
+    const model = process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5'
 
-    console.log('[Chat API] Endpoint:', endpoint)
+    console.log('[Chat API] Final endpoint:', endpoint)
+    console.log('[Chat API] Final model:', model)
 
     // Direct fetch to NVIDIA API - bypassing AI SDK
     const nvidiaResponse = await fetch(endpoint, {
@@ -101,7 +107,7 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5',
+          model: model,
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages,
