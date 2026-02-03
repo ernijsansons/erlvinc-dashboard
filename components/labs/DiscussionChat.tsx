@@ -91,6 +91,7 @@ export function DiscussionChat({ opportunityId }: DiscussionChatProps) {
       setMessages(updatedMessages)
 
       // Save to database
+      // @ts-ignore - Supabase type system issue
       await supabase
         .from('labs_opportunities')
         .update({
