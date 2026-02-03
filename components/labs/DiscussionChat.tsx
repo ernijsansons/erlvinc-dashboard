@@ -91,14 +91,15 @@ export function DiscussionChat({ opportunityId }: DiscussionChatProps) {
       setMessages(updatedMessages)
 
       // Save to database
+      const updateData: Record<string, any> = {
+        discussion_messages: updatedMessages,
+        discussion_started_at: messages.length === 0 ? new Date().toISOString() : undefined,
+        updated_at: new Date().toISOString(),
+      }
       // @ts-ignore - Supabase type system issue
       await supabase
         .from('labs_opportunities')
-        .update({
-          discussion_messages: updatedMessages,
-          discussion_started_at: messages.length === 0 ? new Date().toISOString() : undefined,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', opportunityId)
     } catch (error) {
       console.error('Error sending message:', error)
