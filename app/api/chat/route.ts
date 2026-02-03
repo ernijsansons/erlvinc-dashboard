@@ -2,7 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { streamText, convertToCoreMessages } from 'ai'
+import { streamText } from 'ai'
+
+export const runtime = 'edge'
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,7 +80,7 @@ ${opportunities?.map(o => `- ${o.title} (${o.status}) - Betty: ${o.betty_recomme
 
 Answer user questions about ERLV Inc operations, provide strategic advice, and help make decisions.`
 
-    // Initialize NVIDIA provider
+    // Initialize NVIDIA provider with OpenAI-compatible SDK
     const nvidia = createOpenAICompatible({
       name: 'nvidia',
       baseURL: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
@@ -86,43 +89,37 @@ Answer user questions about ERLV Inc operations, provide strategic advice, and h
       },
     })
 
-    // Primary model: Kimi 2.5
+    // Primary model: Kimi 2.5 with advanced thinking mode
     const primaryModel = nvidia(process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5')
-    const backupModel = nvidia(process.env.BACKUP_MODEL || 'deepseek-ai/deepseek-v3.1')
 
-    try {
-      console.log('Using NVIDIA API with model:', process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5')
-      const result = await streamText({
-        // @ts-ignore - Model version compatibility issue
-        model: primaryModel,
-        system: systemPrompt,
-        messages: convertToCoreMessages(messages),
-        maxTokens: 2048,
-        temperature: 1.0,  // Kimi Thinking mode
-        topP: 0.95,
-      })
+    console.log('[Chat API] Starting stream with model:', process.env.PRIMARY_MODEL || 'moonshotai/kimi-k2.5')
 
-      return result.toDataStreamResponse()
-    } catch (error) {
-      // Fallback to DeepSeek
-      console.error('Kimi 2.5 failed, falling back to DeepSeek:', error)
+    // Use AI SDK v6 streamText with full configuration
+    const result = streamText({
+      model: primaryModel,
+      system: systemPrompt,
+      messages: messages,
+      temperature: 1.0,
+      topP: 0.95,
+      onFinish: (result) => {
+        console.log('[Chat API] Stream finished:', {
+          usage: result.usage,
+          finishReason: result.finishReason,
+        })
+      },
+    })
 
-      const result = await streamText({
-        // @ts-ignore - Model version compatibility issue
-        model: backupModel,
-        system: systemPrompt,
-        messages: convertToCoreMessages(messages),
-        maxTokens: 2048,
-      })
-
-      return result.toDataStreamResponse()
-    }
+    // Return streaming response
+    return result.toTextStreamResponse()
   } catch (error) {
-    console.error('Error in chat API:', error)
+    console.error('[Chat API] Error:', error)
+
+    // Return detailed error for debugging
     return new Response(
       JSON.stringify({
         error: 'Failed to generate response',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       }),
       {
         status: 500,
