@@ -94,7 +94,7 @@ export default function LabsPage() {
     badges: opp.betty_recommendation
       ? [{
           label: `Betty: ${opp.betty_recommendation}`,
-          variant: opp.betty_recommendation === 'GO' ? 'default' : 'destructive' as const
+          variant: opp.betty_recommendation === 'GO' ? 'default' : 'secondary' as const
         }]
       : undefined,
     metadata: opp.betty_confidence
