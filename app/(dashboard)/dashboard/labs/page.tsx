@@ -49,7 +49,8 @@ export default function LabsPage() {
     const { data } = await supabase
       .from('labs_opportunities')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('score', { ascending: false })  // Sort by score (highest first)
+      .order('created_at', { ascending: false })  // Then by date
 
     setOpportunities(data || [])
     setIsLoading(false)
@@ -85,22 +86,62 @@ export default function LabsPage() {
     router.push(`/dashboard/labs/${item.id}/discuss`)
   }
 
+  // Helper function to get score badge variant
+  const getScoreBadgeVariant = (score: number): 'default' | 'secondary' | 'outline' => {
+    if (score >= 80) return 'default'  // Green for excellent (80-100)
+    if (score >= 60) return 'secondary'  // Yellow for good (60-79)
+    return 'outline'  // Gray for low priority (<60)
+  }
+
   // Transform opportunities to Kanban items
-  const kanbanItems: KanbanItem[] = opportunities.map(opp => ({
-    id: opp.id,
-    columnId: opp.status || 'scanned',
-    title: opp.title,
-    subtitle: opp.niche,
-    badges: opp.betty_recommendation
-      ? [{
-          label: `Betty: ${opp.betty_recommendation}`,
-          variant: opp.betty_recommendation === 'GO' ? 'default' : 'secondary' as const
-        }]
-      : undefined,
-    metadata: opp.betty_confidence
-      ? [{ label: 'Confidence', value: `${opp.betty_confidence}/10` }]
-      : undefined
-  }))
+  const kanbanItems: KanbanItem[] = opportunities.map(opp => {
+    const badges: { label: string; variant: 'default' | 'secondary' | 'outline' }[] = []
+
+    // Score badge (always show if score exists)
+    if (typeof opp.score === 'number') {
+      badges.push({
+        label: `${opp.score}/100`,
+        variant: getScoreBadgeVariant(opp.score)
+      })
+    }
+
+    // Betty's recommendation badge
+    if (opp.betty_recommendation) {
+      badges.push({
+        label: `Betty: ${opp.betty_recommendation}`,
+        variant: opp.betty_recommendation === 'GO' ? 'default' : 'secondary'
+      })
+    }
+
+    // Research tier badge
+    if (opp.research_tier && opp.research_tier !== 'none') {
+      const tierLabel = opp.research_tier === 'quick' ? 'Quick Summary' : 'Deep Research'
+      badges.push({
+        label: tierLabel,
+        variant: 'outline'
+      })
+    }
+
+    // Build metadata
+    const metadata: { label: string; value: string }[] = []
+
+    if (opp.betty_confidence) {
+      metadata.push({ label: 'Confidence', value: `${opp.betty_confidence}/10` })
+    }
+
+    if (opp.research_progress && opp.research_progress > 0 && opp.research_progress < 100) {
+      metadata.push({ label: 'Research Progress', value: `${opp.research_progress}%` })
+    }
+
+    return {
+      id: opp.id,
+      columnId: opp.status || 'scanned',
+      title: opp.title,
+      subtitle: opp.niche,
+      badges: badges.length > 0 ? badges : undefined,
+      metadata: metadata.length > 0 ? metadata : undefined
+    }
+  })
 
   return (
     <div className="space-y-6">
